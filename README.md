@@ -18,7 +18,7 @@ Par exemple, `make main` est un raccourci pour `gcc -o main.exe -Wall *.c -lm` :
 ## Utilisation du Codespace par navigateur
 
 1. S'incrire sur [GitHub](https://github.com) (Sign Up).
-2. Si vous n'avez pas encore de Codespace : aller sur https://github.com/mpi-lamartin/environnement et cliquer sur le bouton Code puis "Create Codespace on main".
+2. Si vous n'avez pas encore de Codespace : aller sur https://github.com/mpi-informatique/tp-environnement et cliquer sur le bouton Code puis "Create Codespace on main".
    Puis retrouver votre Codespace en cliquant sur le menu en haut à gauche puis "Codespaces".
 3. Dans les options du Codespace, déselectionner "Auto-delete codespace" pour éviter qu'il ne soit supprimé après 2 semaines d'inutilisation.
 

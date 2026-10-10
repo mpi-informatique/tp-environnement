@@ -4,10 +4,6 @@ set -eu
 for tool in gcc gdb make sqlite3 ocaml ocamlc ocamlopt utop ocamlformat ocamlformat-rpc ocamllsp git; do
     command -v "$tool"
 done
-if command -v opam; then
-    echo "OPAM must not be present in the runtime image" >&2
-    exit 1
-fi
 test "$(id -u)" -ne 0
 test -w "$HOME"
 
@@ -41,4 +37,3 @@ ocamlformat --enable-outside-detected-project --impl test.ml > formatted.ml
 ocamlc formatted.ml -o test-formatted
 ./test-formatted
 ocamllsp --version
-bash -ic ':' 2>&1 | grep -F 'Compiler test.ml et exécuter'

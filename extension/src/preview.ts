@@ -16,7 +16,8 @@ export class Previews implements vscode.Disposable {
   constructor(private context: vscode.ExtensionContext) {}
   dispose() { for (const panel of this.panels.values()) panel.dispose(); }
   open(record: Started, current: Tp, allowCorrection: () => boolean, site: string, openCode: () => Promise<void>): vscode.WebviewPanel {
-    this.panels.get(record.directory)?.dispose();
+    const existing = this.panels.get(record.directory);
+    if (existing) { existing.reveal(vscode.ViewColumn.Two, true); this.revalidate(); return existing; }
     const panel = vscode.window.createWebviewPanel('mpiTp.pdf', current.titre, { viewColumn: vscode.ViewColumn.Two, preserveFocus: true }, {
       enableScripts: true, retainContextWhenHidden: true,
       localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'dist')],

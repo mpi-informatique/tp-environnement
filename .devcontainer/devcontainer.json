@@ -19,5 +19,11 @@
         }
       }
     }
-  }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "postAttachCommand": "sh .devcontainer/install-extension.sh"
 }

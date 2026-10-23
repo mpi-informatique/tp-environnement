@@ -1,0 +1,37 @@
+name: Verify TP extension
+on:
+  push:
+    branches: [main]
+    paths: ['extension/**', '.github/workflows/extension.yml']
+  pull_request:
+    paths: ['extension/**', '.github/workflows/extension.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: tp-environnement
+      - uses: actions/checkout@v4
+        with:
+          repository: mpi-informatique/exercices
+          path: exercices
+          sparse-checkout: shared
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tp-environnement/extension/package-lock.json
+      - run: npm ci
+        working-directory: tp-environnement/extension
+      - run: npm test
+        working-directory: tp-environnement/extension
+      - run: npm run package
+        working-directory: tp-environnement/extension
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vscode-mpi-tp
+          path: tp-environnement/extension/releases/*.vsix

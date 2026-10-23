@@ -41,4 +41,6 @@ docker run --rm -i mpi-environnement:test sh -s < .devcontainer/smoke-test.sh
 
 ## Panneau des TP
 
-Le conteneur installe l'extension [TP MPI](extension/README.md), qui propose les TP commencés, ceux du cours et la banque complète. Cliquer sur un TP ouvre son squelette à gauche et son énoncé PDF à droite. Les travaux sont conservés dans `tp/` ; penser à les sauvegarder dans un dépôt personnel ou à les télécharger.
+Le conteneur installe l'extension [TP MPI](https://github.com/mpi-informatique/vscode-mpi-exercices/tree/main/tp), qui propose les TP commencés, ceux du cours et la banque complète. Cliquer sur un TP ouvre son squelette à gauche et son énoncé PDF à droite. Les travaux sont conservés dans `tp/` ; penser à les sauvegarder dans un dépôt personnel ou à les télécharger.
+
+Les sources de l’extension sont maintenues dans `vscode-mpi-exercices/tp`. Le script `.devcontainer/install-extension.sh` récupère les révisions fixées de l’extension et de ses composants partagés et construit le VSIX dans le cache utilisateur, uniquement si nécessaire.

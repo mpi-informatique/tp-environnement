@@ -15,6 +15,19 @@ export async function run() {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   assert.equal(api.previewStatus.get(api.started[0].directory)?.pages, 1);
+  const rendering = () => api.previewStatus.get(api.started[0].directory);
+  const first = rendering();
+  assert.equal(first.pixelRatio, 2, 'Le test utilise un écran de densité double');
+  assert(Math.abs(first.width - first.displayWidth * first.pixelRatio) <= 1, 'Le bitmap couvre les pixels physiques de la page');
+  await vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
+  const resizedDeadline = Date.now() + 20000;
+  while (rendering().displayWidth === first.displayWidth && Date.now() < resizedDeadline) {
+    assert.equal(rendering().error, undefined);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  assert.notEqual(rendering().displayWidth, first.displayWidth, 'Redimensionner le panneau recalcule le PDF');
+  assert(Math.abs(rendering().width - rendering().displayWidth * rendering().pixelRatio) <= 1);
+
   const file = path.join(api.started[0].directory, 'main.ml');
   await writeFile(file, 'let travail = 42\n');
   await api.open('tp-test');

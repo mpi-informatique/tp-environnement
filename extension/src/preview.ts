@@ -9,7 +9,7 @@ import { download } from './storage';
 import { resourceUrl, type Tp } from './core';
 
 export class Previews implements vscode.Disposable {
-  readonly status = new Map<string, { pages?: number; error?: string }>();
+  readonly status = new Map<string, { pages?: number; error?: string; pixelRatio?: number; width?: number; displayWidth?: number }>();
   private permissions = new Map<string, () => void>();
   revalidate() { for (const update of this.permissions.values()) update(); }
   private panels = new Map<string, vscode.WebviewPanel>();
@@ -48,7 +48,7 @@ export class Previews implements vscode.Disposable {
     let queue = Promise.resolve();
     const listener = webview.onDidReceiveMessage(message => {
       queue = queue.then(async () => {
-        if (message?.type === 'pdfReady') this.status.set(record.directory, { pages: message.pages });
+        if (message?.type === 'pdfReady') this.status.set(record.directory, { pages: message.pages, pixelRatio: message.pixelRatio, width: message.width, displayWidth: message.displayWidth });
         else if (['pdfError', 'clientError'].includes(message?.type)) this.status.set(record.directory, { error: message.error });
         else if (message?.type === 'ready') { ready = true; await show(); }
         else if (message?.type === 'enonce' || message?.type === 'corrige') { variant = message.type; await show(); }

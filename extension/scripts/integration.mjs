@@ -25,6 +25,6 @@ const workspace = join(temporary, 'test.code-workspace');
 await writeFile(workspace, JSON.stringify({ folders: [{ path: temporary }], settings: { 'mpiTp.siteUrl': base, 'mpiTp.courseMenuUrl': base + 'menu.md', 'mpiTp.directory': 'travaux' } }));
 try {
   await runTests({ extensionDevelopmentPath: resolve('.'), extensionTestsPath: resolve('dist/integration.js'),
-    launchArgs: [workspace, '--disable-workspace-trust', '--skip-welcome', '--skip-release-notes', '--disable-extensions', '--user-data-dir', join(temporary, 'user')],
+    launchArgs: [workspace, '--force-device-scale-factor=2', '--disable-workspace-trust', '--skip-welcome', '--skip-release-notes', '--disable-extensions', '--user-data-dir', join(temporary, 'user')],
     vscodeExecutablePath: process.env.VSCODE_EXECUTABLE_PATH ?? (process.platform === 'darwin' && existsSync('/Applications/Visual Studio Code.app/Contents/MacOS/Code') ? '/Applications/Visual Studio Code.app/Contents/MacOS/Code' : undefined) });
 } finally { server.close(); await rm(temporary, { recursive: true, force: true }); }

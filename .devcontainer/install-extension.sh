@@ -1,36 +1,39 @@
 #!/bin/sh
-# Codespaces fournit la commande code ; Node est installé par la feature du conteneur.
+# Codespaces fournit la commande code ; curl télécharge le VSIX publié sur GitHub.
 set -eu
-build_dir="$HOME/.cache/mpi-tp-extension"
-# Mettre à jour ces révisions pour déployer une nouvelle construction dans le conteneur.
-extension_revision=fdc1b601de86e093866c8f319d8cf912bcae1c6c
-shared_revision=d80dd95c7adc63a6f2ec222e413698c8eeb848f1
+cache_dir=${MPI_TP_EXTENSION_CACHE:-"$HOME/.cache/mpi-tp-extension"}
+release_url=${MPI_TP_EXTENSION_URL:-https://github.com/mpi-informatique/vscode-mpi-exercices/releases/latest/download/vscode-mpi-tp.vsix}
+mkdir -p "$cache_dir"
+vsix="$cache_dir/vscode-mpi-tp.vsix"
+etag="$cache_dir/release.etag"
+temporary=$(mktemp -d "$cache_dir/download.XXXXXX")
+trap 'rm -rf "$temporary"' EXIT
+trap 'exit 1' HUP INT TERM
 
-checkout_sources() {
-    repository=$1
-    revision=$2
-    directory=$3
-    subdirectory=$4
-    if [ ! -d "$directory/.git" ]; then
-        git clone --depth 1 --filter=blob:none --sparse "$repository" "$directory"
-    fi
-    git -C "$directory" sparse-checkout set "$subdirectory"
-    if [ "$(git -C "$directory" rev-parse HEAD)" != "$revision" ]; then
-        git -C "$directory" fetch --depth 1 origin "$revision"
-        git -C "$directory" checkout --detach FETCH_HEAD
-    fi
-}
-
-mkdir -p "$build_dir"
-checkout_sources https://github.com/mpi-informatique/vscode-mpi-exercices.git "$extension_revision" "$build_dir/vscode-mpi-exercices" tp
-checkout_sources https://github.com/mpi-informatique/exercices.git "$shared_revision" "$build_dir/exercices" shared
-extension_dir="$build_dir/vscode-mpi-exercices/tp"
-package_file=$(node -e 'const p = require(process.argv[1]); process.stdout.write(`${p.name}-${p.version}.vsix`)' "$extension_dir/package.json")
-vsix="$extension_dir/releases/$package_file"
-build_key="$extension_revision:$shared_revision"
-# Une révision déjà construite ne nécessite ni réseau ni réinstallation des dépendances.
-if [ ! -f "$vsix" ] || [ ! -f "$build_dir/build.key" ] || [ "$(cat "$build_dir/build.key")" != "$build_key" ]; then
-    (cd "$extension_dir" && npm ci && npm run package)
-    printf '%s\n' "$build_key" > "$build_dir/build.key"
+# L’ETag évite de télécharger un VSIX inchangé. Sans fichier local, forcer le téléchargement.
+set --
+if [ -s "$vsix" ] && [ -s "$etag" ]; then
+    set -- --etag-compare "$etag"
 fi
-code --install-extension "$vsix" --force
+if status=$(curl --fail --location --silent --show-error --connect-timeout 5 --max-time 45 --etag-save "$temporary/release.etag" "$@" --output "$temporary/vscode-mpi-tp.vsix" --write-out '%{http_code}' "$release_url"); then
+    if [ "$status" = 304 ] && [ -s "$vsix" ]; then
+        code --install-extension "$vsix" --force
+        exit 0
+    fi
+    if [ "$status" = 200 ] && [ -s "$temporary/vscode-mpi-tp.vsix" ]; then
+        # VS Code valide le nouveau VSIX avant de remplacer la copie en cache.
+        if code --install-extension "$temporary/vscode-mpi-tp.vsix" --force; then
+            mv "$temporary/vscode-mpi-tp.vsix" "$vsix"
+            mv "$temporary/release.etag" "$etag"
+            exit 0
+        fi
+    fi
+fi
+
+if [ -s "$vsix" ]; then
+    echo 'TP MPI : mise à jour indisponible, utilisation de la version en cache.' >&2
+    code --install-extension "$vsix" --force
+else
+    echo 'TP MPI : impossible de récupérer la dernière release GitHub et aucune version en cache. Réessayer à la prochaine connexion.' >&2
+    exit 1
+fi

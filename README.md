@@ -43,4 +43,12 @@ docker run --rm -i mpi-environnement:test sh -s < .devcontainer/smoke-test.sh
 
 Le conteneur installe l'extension [TP MPI](https://github.com/mpi-informatique/vscode-mpi-exercices/tree/main/tp), qui propose les TP commencés, ceux du cours et la banque complète. Cliquer sur un TP ouvre son squelette à gauche et son énoncé PDF à droite. Les travaux sont conservés dans `tp/` ; penser à les sauvegarder dans un dépôt personnel ou à les télécharger.
 
-Les sources de l’extension sont maintenues dans `vscode-mpi-exercices/tp`. Le script `.devcontainer/install-extension.sh` récupère les révisions fixées de l’extension et de ses composants partagés et construit le VSIX dans le cache utilisateur, uniquement si nécessaire.
+Les sources de l’extension sont maintenues dans `vscode-mpi-exercices/tp`. À chaque connexion, `.devcontainer/install-extension.sh` récupère [le VSIX de la dernière release stable](https://github.com/mpi-informatique/vscode-mpi-exercices/releases/latest/download/vscode-mpi-tp.vsix) et l’installe avec VS Code. Un fichier inchangé est réutilisé ; la copie en cache reste disponible si le téléchargement ou l’installation de la nouvelle version échoue. Le conteneur n’a plus besoin de compiler l’extension. Recharger la fenêtre après une mise à jour si nécessaire.
+
+La première connexion nécessite une release contenant `vscode-mpi-tp.vsix` et un accès à GitHub. En cas d’échec sans copie en cache, le script affiche un message et réessaie à la prochaine connexion. Le cache est conservé dans `~/.cache/mpi-tp-extension/`.
+
+Pour vérifier le téléchargement, les mises à jour et le fonctionnement hors connexion :
+
+```sh
+python3 -m unittest discover -s tests -v
+```

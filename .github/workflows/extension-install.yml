@@ -1,0 +1,17 @@
+name: Vérifier l’installation de TP MPI
+on:
+  push:
+    branches: [main]
+    paths: ['.devcontainer/install-extension.sh', 'tests/**', '.github/workflows/extension-install.yml']
+  pull_request:
+    paths: ['.devcontainer/install-extension.sh', 'tests/**', '.github/workflows/extension-install.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - run: sh -n .devcontainer/install-extension.sh
+      - run: python3 -m unittest discover -s tests -v

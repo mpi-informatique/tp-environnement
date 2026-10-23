@@ -28,6 +28,34 @@ export async function run() {
   assert.notEqual(rendering().displayWidth, first.displayWidth, 'Redimensionner le panneau recalcule le PDF');
   assert(Math.abs(rendering().width - rendering().displayWidth * rendering().pixelRatio) <= 1);
 
+  // Vérifier les pixels du papier, pas seulement la détection clair/sombre.
+  const settings = vscode.workspace.getConfiguration('workbench');
+  const previousTheme = settings.get<string>('colorTheme');
+  const previousColors = settings.get('colorCustomizations');
+  try {
+    for (const [theme, background, foreground, rgb] of [
+      ['Default Light Modern', '#e8dfcc', '#302010', [232, 223, 204]],
+      ['Default Dark Modern', '#243648', '#eef3f8', [36, 54, 72]],
+      ['Default High Contrast', '#101820', '#ffffff', [16, 24, 32]],
+    ] as const) {
+      await settings.update('colorTheme', theme, vscode.ConfigurationTarget.Workspace);
+      await settings.update('colorCustomizations', { 'editor.background': background, 'editor.foreground': foreground }, vscode.ConfigurationTarget.Workspace);
+      // Le filtre de couleurs PDF.js peut arrondir une composante d'un niveau.
+      const matchesPaper = () => rendering().background?.[3] === 255 && rgb.every((value, i) => Math.abs(rendering().background[i] - value) <= 1);
+      const themeDeadline = Date.now() + 20000;
+      while (!matchesPaper() && Date.now() < themeDeadline) {
+        assert.equal(rendering().error, undefined);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.equal(rendering().pageColors.background, background, `Couleurs de l'éditeur : ${theme}`);
+      assert.equal(rendering().pageColors.foreground, foreground);
+      assert(matchesPaper(), `Le papier adopte le thème : ${theme}`);
+    }
+  } finally {
+    await settings.update('colorTheme', previousTheme, vscode.ConfigurationTarget.Workspace);
+    await settings.update('colorCustomizations', previousColors, vscode.ConfigurationTarget.Workspace);
+  }
+
   const file = path.join(api.started[0].directory, 'main.ml');
   await writeFile(file, 'let travail = 42\n');
   await api.open('tp-test');

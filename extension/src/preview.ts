@@ -9,7 +9,7 @@ import { download } from './storage';
 import { resourceUrl, type Tp } from './core';
 
 export class Previews implements vscode.Disposable {
-  readonly status = new Map<string, { pages?: number; error?: string; pixelRatio?: number; width?: number; displayWidth?: number }>();
+  readonly status = new Map<string, { pages?: number; error?: string; pixelRatio?: number; width?: number; displayWidth?: number; pageColors?: { background: string; foreground: string }; background?: number[] }>();
   private permissions = new Map<string, () => void>();
   revalidate() { for (const update of this.permissions.values()) update(); }
   private panels = new Map<string, vscode.WebviewPanel>();
@@ -28,7 +28,8 @@ export class Previews implements vscode.Disposable {
     const channel = randomBytes(18).toString('hex');
     const labels = variantLabels();
     let variant: Variant = 'enonce';
-    let dark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+    const isDark = () => [vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(vscode.window.activeColorTheme.kind);
+    let darkOverride: boolean | undefined;
     let ready = false;
     const pdfs = new Map<Variant, string>();
     const post = (data: object) => webview.postMessage({ ...data, channel });
@@ -43,16 +44,16 @@ export class Previews implements vscode.Disposable {
         } else pdfs.set(selected, (await readFile(path.join(record.directory, '.mpi/enonce.pdf'))).toString('base64'));
       }
       if (selected === 'corrige' && !allowCorrection()) { variant = 'enonce'; await show(); return; }
-      await post({ type: 'show', variant: selected, labels, pdf: pdfs.get(selected), native: false, dark, allowedVariants: allowCorrection() && current.pdfs.corrige ? ['enonce', 'corrige'] : ['enonce'], hasCode: true, sessions: {}, jumps: false });
+      await post({ type: 'show', variant: selected, labels, pdf: pdfs.get(selected), native: false, dark: darkOverride ?? isDark(), theme: darkOverride === undefined ? 'vscode' : undefined, allowedVariants: allowCorrection() && current.pdfs.corrige ? ['enonce', 'corrige'] : ['enonce'], hasCode: true, sessions: {}, jumps: false });
     };
     let queue = Promise.resolve();
     const listener = webview.onDidReceiveMessage(message => {
       queue = queue.then(async () => {
-        if (message?.type === 'pdfReady') this.status.set(record.directory, { pages: message.pages, pixelRatio: message.pixelRatio, width: message.width, displayWidth: message.displayWidth });
+        if (message?.type === 'pdfReady') this.status.set(record.directory, { pages: message.pages, pixelRatio: message.pixelRatio, width: message.width, displayWidth: message.displayWidth, pageColors: message.pageColors, background: message.background });
         else if (['pdfError', 'clientError'].includes(message?.type)) this.status.set(record.directory, { error: message.error });
         else if (message?.type === 'ready') { ready = true; await show(); }
         else if (message?.type === 'enonce' || message?.type === 'corrige') { variant = message.type; await show(); }
-        else if (message?.type === 'theme') { dark = !dark; await show(); }
+        else if (message?.type === 'theme') { darkOverride = !(darkOverride ?? isDark()); await show(); }
         else if (message?.type === 'restart') { pdfs.clear(); await post({ type: 'reset' }); await show(); }
         else if (message?.type === 'code') await openCode();
         else if (message?.type === 'fullscreen') await vscode.commands.executeCommand('workbench.action.toggleZenMode');
@@ -61,6 +62,11 @@ export class Previews implements vscode.Disposable {
           if (uri && pdfs.has(variant)) await writeFile(uri.fsPath, Buffer.from(pdfs.get(variant)!, 'base64'));
         }
       }).catch(async error => { variant = 'enonce'; await post({ type: 'status', message: String(error) }); });
+    });
+    const themeListener = vscode.window.onDidChangeActiveColorTheme(() => {
+      darkOverride = undefined;
+      queue = queue.then(async () => { if (ready) await show(); })
+        .catch(async error => { await post({ type: 'status', message: String(error) }); });
     });
     this.permissions.set(record.directory, () => {
       // Une ancienne vue ne doit pas conserver un corrigé retiré du menu.
@@ -73,7 +79,7 @@ export class Previews implements vscode.Disposable {
       pdfjs: webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist/pdfjs')).toString(),
       uri: file => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist/viewer', file)).toString(),
       variants: current.pdfs.corrige ? ['enonce', 'corrige'] : ['enonce'], hiddenVariants: allowCorrection() ? [] : ['corrige'], labels, variant });
-    panel.onDidDispose(() => { listener.dispose(); this.permissions.delete(record.directory); if (this.panels.get(record.directory) === panel) this.panels.delete(record.directory); });
+    panel.onDidDispose(() => { listener.dispose(); themeListener.dispose(); this.permissions.delete(record.directory); if (this.panels.get(record.directory) === panel) this.panels.delete(record.directory); });
     return panel;
   }
 }

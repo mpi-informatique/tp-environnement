@@ -18,6 +18,7 @@
     "EXERCICES_WEB_URL": "https://${containerEnv:CODESPACE_NAME}-4321.${containerEnv:GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
   },
   "postCreateCommand": "python3 .devcontainer/personnel/setup.py",
+  "waitFor": "postCreateCommand",
   "postAttachCommand": "code --reuse-window /workspaces/${localWorkspaceFolderBasename}/personnel.code-workspace",
   "forwardPorts": [3000, 4321],
   "portsAttributes": {

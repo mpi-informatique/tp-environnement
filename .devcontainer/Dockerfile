@@ -24,7 +24,7 @@ COPY --from=tools /opt/mpi-environnement /opt/mpi-environnement
 COPY --from=locale-data /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive
 RUN mkdir -p /etc/nix \
     && printf '%s\n' 'experimental-features = nix-command flakes' 'build-users-group =' 'sandbox = false' > /etc/nix/nix.conf
-ENV PATH="/home/vscode/.opam/default/bin:/opt/mpi-environnement/bin:/nix/var/nix/profiles/default/bin:${PATH}" \
+ENV PATH="/opt/mpi-environnement/bin:/home/vscode/.opam/default/bin:/nix/var/nix/profiles/default/bin:${PATH}" \
     LANG=C.UTF-8
 
 COPY .devcontainer/environment.sh /etc/mpi-environment.sh

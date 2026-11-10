@@ -1,0 +1,20 @@
+{
+  "folders": [
+    { "name": "exercices", "path": "../exercices" },
+    { "name": "exercices-prive", "path": "../exercices-prive" },
+    { "name": "tp-environnement", "path": "." },
+    { "name": "lib", "path": "../lib" },
+    { "name": "cours", "path": "../cours" }
+  ],
+  "settings": {
+    "terminal.integrated.cwd": "${workspaceFolder:exercices}",
+    "tinymist.rootPath": "${fileWorkspaceFolder}",
+    "tinymist.formatterMode": "typstyle",
+    "tinymist.formatterProseWrap": false,
+    "[typst]": {
+      "editor.defaultFormatter": "myriad-dreamin.tinymist",
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true
+    }
+  }
+}

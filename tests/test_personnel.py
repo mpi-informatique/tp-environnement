@@ -1,0 +1,72 @@
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+from tempfile import TemporaryDirectory
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("personnel", ROOT / ".devcontainer/personnel/setup.py")
+personnel = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(personnel)
+
+
+class PersonnelTest(unittest.TestCase):
+    def git(self, *args):
+        return subprocess.check_output(["git", *map(str, args)], text=True, stderr=subprocess.DEVNULL).strip()
+
+    def source(self, root, name):
+        source = root / name
+        self.git("init", "-b", "main", source)
+        (source / "README.md").write_text("Exemple\n")
+        self.git("-C", source, "add", "README.md")
+        self.git("-C", source, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "Initial")
+        return str(source)
+
+    def test_rerun_preserves_branch_and_work(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            origins = {"exercices": self.source(root, "source")}
+            parent = root / "workspace"
+            personnel.clone_repositories(parent, origins)
+            clone = parent / "exercices"
+            self.git("-C", clone, "checkout", "-b", "travail")
+            (clone / "README.md").write_text("Travail en cours\n")
+            personnel.clone_repositories(parent, origins)
+            self.assertEqual(self.git("-C", clone, "branch", "--show-current"), "travail")
+            self.assertEqual((clone / "README.md").read_text(), "Travail en cours\n")
+
+    def test_existing_directory_is_preserved(self):
+        with TemporaryDirectory() as directory:
+            parent = Path(directory)
+            target = parent / "exercices"
+            target.mkdir()
+            (target / "travail.txt").write_text("À conserver")
+            with self.assertRaises(RuntimeError):
+                personnel.clone_repositories(parent, {"exercices": "inutilisé"})
+            self.assertEqual((target / "travail.txt").read_text(), "À conserver")
+
+    def test_existing_foreign_repository_is_rejected(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            origins = {"exercices": self.source(root, "source")}
+            parent = root / "workspace"
+            personnel.clone_repositories(parent, origins)
+            self.git("-C", parent / "exercices", "remote", "set-url", "origin", "autre-origine")
+            with self.assertRaises(RuntimeError):
+                personnel.clone_repositories(parent, origins)
+
+    def test_workspace_and_permissions_cover_cloned_repositories(self):
+        config = json.loads((ROOT / ".devcontainer/personnel/devcontainer.json").read_text())
+        workspace = json.loads((ROOT / "personnel.code-workspace").read_text())
+        repositories = set(personnel.REPOSITORIES)
+        self.assertEqual({folder["name"] for folder in workspace["folders"]}, repositories | {"tp-environnement"})
+        permissions = config["customizations"]["codespaces"]["repositories"]
+        self.assertEqual(set(permissions), {f"mpi-informatique/{name}" for name in repositories})
+        self.assertTrue(all(value["permissions"]["contents"] == "write" for value in permissions.values()))
+        student = json.loads((ROOT / ".devcontainer/devcontainer.json").read_text())
+        self.assertNotIn("codespaces", student["customizations"])
+
+
+if __name__ == "__main__":
+    unittest.main()

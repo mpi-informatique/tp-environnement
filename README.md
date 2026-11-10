@@ -29,6 +29,14 @@ opam upgrade mpi-informatique
 
 Relancer ensuite `utop` et charger la bibliothèque avec `#require "mpi-informatique";;`. Les mises à jour de l'image demandent une reconstruction du conteneur ; celles de la bibliothèque n'en demandent pas.
 
+## Codespace personnel
+
+À la création d'un Codespace de ce dépôt, choisir la configuration **MPI personnel** (`.devcontainer/personnel/devcontainer.json`). GitHub demande les droits d'écriture sur `exercices`, `exercices-prive`, `lib` et `cours`.
+
+Les cinq dépôts sont ouverts dans [personnel.code-workspace](personnel.code-workspace). Le profil ajoute Typst, Python, Just, Node.js 22, GitHub CLI, MDX et odoc ; il prépare les dépendances des deux sites et les liens vers le clone public pour Tinymist. Les ports 3000 et 4321 sont prévus pour les sites de cours et d'exercices ; le lecteur des cours pointe vers le site d'exercices du Codespace.
+
+La préparation peut être relancée avec `python3 .devcontainer/personnel/setup.py`. Les clones existants et leurs branches sont conservés. En local, le même outillage est disponible avec `nix develop .#personnel`.
+
 Le Makefile est celui donné au TP d'informatique à CCINP et permet de simplifier les commandes.  
 Par exemple, `make main` est un raccourci pour `gcc -o main.exe -Wall *.c -lm` : il compile tous les fichiers C et produit un exécutable `main.exe`.
 

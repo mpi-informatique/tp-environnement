@@ -2,7 +2,8 @@
 FROM nixos/nix:2.34.7 AS tools
 ENV NIX_CONFIG="experimental-features = nix-command flakes"
 COPY flake.nix flake.lock /src/
-RUN nix build /src --out-link /opt/mpi-environnement && nix store gc
+ARG MPI_PROFILE=default
+RUN nix build "/src#${MPI_PROFILE}" --out-link /opt/mpi-environnement && nix store gc
 
 FROM debian:trixie-slim AS locale-data
 RUN apt-get update \

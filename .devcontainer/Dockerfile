@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM nixos/nix:2.34.7 AS tools
 ENV NIX_CONFIG="experimental-features = nix-command flakes"
-COPY . /src
+COPY flake.nix flake.lock /src/
 RUN nix build /src --out-link /opt/mpi-environnement && nix store gc
 
 FROM debian:trixie-slim AS locale-data

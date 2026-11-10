@@ -34,8 +34,10 @@ ocamlc test.ml -o test-bytecode
 ocamlopt test.ml -o test-native
 ./test-native
 printf 'print_endline "utop OK";;\n' | utop -init /dev/null -stdin
-test "$(ocamlc -version)" = "$(opam var ocaml-version)"
-printf '#require "mpi-informatique";;\nassert (Mpi.Automate.nb_etats (Mpi.Automate.creer ~nb_etats:0 ~initiaux:[] ~finaux:[] ~transitions:[]) = 0);;\n' | utop -init /dev/null -stdin
+test "$(ocamlc -version)" = "$(opam var ocaml:version)"
+printf '#require "mpi-informatique";;\nlet a = Mpi.Automate.creer ~nb_etats:2 ~initiaux:[0] ~finaux:[1] ~transitions:[(0, Some "a", 1)];;\nassert (Mpi.Automate.nb_etats a = 2);;\nMpi.Dot.ecrire "automate.dot" (Mpi.Dot.automate ~symbole:Fun.id a);;\n' | utop -init /dev/null -stdin
+dot -Tsvg automate.dot -o automate.svg
+grep -q '<text' automate.svg
 test -w "$HOME/.opam/default"
 nix --version
 bash --login -c 'command -v nix; test "$(dune --version)" = "$(/opt/mpi-environnement/bin/dune --version)"'

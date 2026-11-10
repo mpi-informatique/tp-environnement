@@ -20,10 +20,11 @@
             pkgs.patch pkgs.diffutils pkgs.bzip2
           ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.gdb ];
           toplevel = "${ocaml.findlib}/lib/ocaml/${ocaml.ocaml.version}/site-lib";
-        in { inherit pkgs ocaml tools toplevel; });
+          fonts = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
+        in { inherit pkgs ocaml tools toplevel fonts; });
       mkShell = system: extra:
-        let inherit (toolchains.${system}) pkgs tools toplevel; in
-        pkgs.mkShell ({ OCAML_TOPLEVEL_PATH = toplevel; } // extra // {
+        let inherit (toolchains.${system}) pkgs tools toplevel fonts; in
+        pkgs.mkShell ({ OCAML_TOPLEVEL_PATH = toplevel; FONTCONFIG_FILE = fonts; } // extra // {
           packages = tools ++ (extra.packages or [ ]);
         });
     in {
@@ -32,7 +33,7 @@
       devShells = forAllSystems (system: { default = mkShell system { }; });
       packages = forAllSystems (system:
         let
-          inherit (toolchains.${system}) pkgs tools toplevel;
+          inherit (toolchains.${system}) pkgs tools toplevel fonts;
           binaries = pkgs.buildEnv {
             name = "mpi-tools";
             paths = tools;
@@ -45,6 +46,7 @@
             {
               printf 'export PATH=%s:"$PATH"\n' ${binaries}/bin
               printf 'export OCAML_TOPLEVEL_PATH=%s\n' ${toplevel}
+              printf 'export FONTCONFIG_FILE=%s\n' ${fonts}
               for variable in OCAMLPATH CAML_LD_LIBRARY_PATH; do
                 printf 'export %s=%q:"''${%s-}"\n' "$variable" "''${!variable-}" "$variable"
               done
@@ -52,10 +54,11 @@
           '';
         });
       checks = forAllSystems (system:
-        let inherit (toolchains.${system}) pkgs tools toplevel; in {
+        let inherit (toolchains.${system}) pkgs tools toplevel fonts; in {
           tools = pkgs.runCommand "mpi-tools-check" {
             nativeBuildInputs = tools;
             OCAML_TOPLEVEL_PATH = toplevel;
+            FONTCONFIG_FILE = fonts;
           } ''
             bash ${self}/tests/smoke.sh
             touch "$out"

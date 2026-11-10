@@ -9,7 +9,7 @@ Contient :
 
 ## Socle Nix commun
 
-`flake.nix` définit les outils utilisés aussi par [`lib`](https://github.com/mpi-informatique/lib) et [`exercices`](https://github.com/mpi-informatique/exercices). OCaml 5.5.2 et les autres versions sont verrouillés dans `flake.lock`.
+`flake.nix` définit les outils utilisés aussi par [`lib`](https://github.com/mpi-informatique/lib) et [`exercices`](https://github.com/mpi-informatique/exercices). OCaml 5.5.2 et les autres versions sont verrouillés dans `flake.lock`. Plateformes : Linux x86_64/ARM64 et macOS ARM64.
 
 ```sh
 nix develop

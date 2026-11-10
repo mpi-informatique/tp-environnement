@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("personnel", ROOT / ".devcontainer/personnel/setup.py")
@@ -12,6 +13,24 @@ spec.loader.exec_module(personnel)
 
 
 class PersonnelTest(unittest.TestCase):
+    def test_workspace_is_opened_once_after_reconnections(self):
+        with TemporaryDirectory() as directory, patch.object(personnel.subprocess, "run") as run:
+            marker = Path(directory) / "opened"
+            personnel.open_workspace(marker)
+            personnel.open_workspace(marker)
+            run.assert_called_once()
+
+    def test_workspace_open_failure_can_be_retried(self):
+        with TemporaryDirectory() as directory, patch.object(personnel.subprocess, "run") as run:
+            marker = Path(directory) / "opened"
+            run.side_effect = OSError("VS Code indisponible")
+            with self.assertRaises(OSError):
+                personnel.open_workspace(marker)
+            self.assertFalse(marker.exists())
+            run.side_effect = None
+            personnel.open_workspace(marker)
+            self.assertTrue(marker.exists())
+
     def git(self, *args):
         return subprocess.check_output(["git", *map(str, args)], text=True, stderr=subprocess.DEVNULL).strip()
 

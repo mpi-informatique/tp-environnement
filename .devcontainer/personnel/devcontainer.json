@@ -19,7 +19,7 @@
   },
   "postCreateCommand": "python3 .devcontainer/personnel/setup.py",
   "waitFor": "postCreateCommand",
-  "postAttachCommand": "code --reuse-window /workspaces/${localWorkspaceFolderBasename}/personnel.code-workspace",
+  "postAttachCommand": "python3 .devcontainer/personnel/setup.py --open-workspace",
   "forwardPorts": [3000, 4321],
   "portsAttributes": {
     "3000": { "label": "Cours", "onAutoForward": "notify" },

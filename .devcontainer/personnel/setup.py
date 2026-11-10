@@ -9,6 +9,19 @@ REPOSITORIES = ("exercices", "exercices-prive", "lib", "cours")
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def open_workspace(marker=Path("/tmp/mpi-personnel-workspace-opened")):
+    # Ouvrir le workspace reconnecte VS Code et relance postAttachCommand.
+    try:
+        marker.mkdir()
+    except FileExistsError:
+        return
+    try:
+        subprocess.run(["code", "--reuse-window", str(ROOT / "personnel.code-workspace")], check=True)
+    except (OSError, subprocess.CalledProcessError):
+        marker.rmdir()
+        raise
+
+
 def normalize_origin(origin):
     return origin.replace("git@github.com:", "https://github.com/").replace("ssh://git@github.com/", "https://github.com/").rstrip("/").removesuffix(".git")
 
@@ -42,7 +55,11 @@ def install_dependencies(parent):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clones-only", action="store_true", help="Cloner les dépôts sans préparer les dépendances.")
+    parser.add_argument("--open-workspace", action="store_true", help="Ouvrir l'espace de travail une seule fois par conteneur.")
     args = parser.parse_args()
+    if args.open_workspace:
+        open_workspace()
+        return
     try:
         clone_repositories(ROOT.parent)
         if not args.clones_only:

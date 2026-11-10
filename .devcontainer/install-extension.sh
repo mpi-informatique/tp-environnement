@@ -3,6 +3,7 @@
 set -eu
 cache_dir=${MPI_TP_EXTENSION_CACHE:-"$HOME/.cache/mpi-tp-extension"}
 release_url=${MPI_TP_EXTENSION_URL:-https://github.com/mpi-informatique/vscode-mpi-exercices/releases/latest/download/vscode-mpi-tp.vsix}
+extension_name=${MPI_EXTENSION_NAME:-"TP MPI"}
 mkdir -p "$cache_dir"
 vsix="$cache_dir/vscode-mpi-tp.vsix"
 etag="$cache_dir/release.etag"
@@ -31,9 +32,9 @@ if status=$(curl --fail --location --silent --show-error --connect-timeout 5 --m
 fi
 
 if [ -s "$vsix" ]; then
-    echo 'TP MPI : mise à jour indisponible, utilisation de la version en cache.' >&2
+    echo "$extension_name : mise à jour indisponible, utilisation de la version en cache." >&2
     code --install-extension "$vsix" --force
 else
-    echo 'TP MPI : impossible de récupérer la dernière release GitHub et aucune version en cache. Réessayer à la prochaine connexion.' >&2
+    echo "$extension_name : impossible de récupérer la dernière release GitHub et aucune version en cache. Réessayer à la prochaine connexion." >&2
     exit 1
 fi

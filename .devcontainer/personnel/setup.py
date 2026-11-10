@@ -2,11 +2,27 @@
 """Préparer les clones et dépendances du Codespace personnel."""
 
 import argparse
+import json
+import os
 from pathlib import Path
 import subprocess
 
 REPOSITORIES = ("exercices", "exercices-prive", "lib", "cours")
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def install_extensions():
+    config = json.loads((ROOT / ".devcontainer/personnel/devcontainer.json").read_text())
+    installed = set(subprocess.check_output(["code", "--list-extensions"], text=True).lower().splitlines())
+    for extension in config["customizations"]["vscode"]["extensions"]:
+        if extension.lower() not in installed:
+            subprocess.run(["code", "--install-extension", extension], check=True)
+    env = dict(os.environ,
+        MPI_TP_EXTENSION_URL="https://github.com/mpi-informatique/vscode-mpi-exercices/releases/latest/download/vscode-mpi-exercices.vsix",
+        MPI_TP_EXTENSION_CACHE=str(Path.home() / ".cache/mpi-exercices-extension"),
+        MPI_EXTENSION_NAME="Exercices MPI",
+    )
+    subprocess.run(["sh", str(ROOT / ".devcontainer/install-extension.sh")], env=env, check=True)
 
 
 def open_workspace(marker=Path("/tmp/mpi-personnel-workspace-opened")):
@@ -56,7 +72,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clones-only", action="store_true", help="Cloner les dépôts sans préparer les dépendances.")
     parser.add_argument("--open-workspace", action="store_true", help="Ouvrir l'espace de travail une seule fois par conteneur.")
+    parser.add_argument("--attach", action="store_true", help="Installer les extensions puis ouvrir l'espace de travail.")
     args = parser.parse_args()
+    if args.attach:
+        install_extensions()
+        open_workspace()
+        return
     if args.open_workspace:
         open_workspace()
         return

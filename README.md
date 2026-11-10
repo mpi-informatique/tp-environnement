@@ -37,6 +37,8 @@ Les cinq dépôts sont ouverts dans [personnel.code-workspace](personnel.code-wo
 
 La préparation peut être relancée avec `python3 .devcontainer/personnel/setup.py`. Les clones existants et leurs branches sont conservés. En local, le même outillage est disponible avec `nix develop .#personnel`.
 
+À chaque connexion, les extensions manquantes (Tinymist, OCaml Platform, C/C++, Python…) sont installées et **Exercices MPI**, l’extension enseignant, est récupérée depuis la dernière release GitHub. Pour relancer cette installation : `python3 .devcontainer/personnel/setup.py --attach`.
+
 Le Makefile est celui donné au TP d'informatique à CCINP et permet de simplifier les commandes.  
 Par exemple, `make main` est un raccourci pour `gcc -o main.exe -Wall *.c -lm` : il compile tous les fichiers C et produit un exécutable `main.exe`.
 

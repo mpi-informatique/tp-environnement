@@ -13,6 +13,20 @@ spec.loader.exec_module(personnel)
 
 
 class PersonnelTest(unittest.TestCase):
+    def test_missing_extensions_and_teacher_vsix_are_installed(self):
+        config = json.loads((ROOT / ".devcontainer/personnel/devcontainer.json").read_text())
+        extensions = config["customizations"]["vscode"]["extensions"]
+        installed = ["myriad-dreamin.tinymist", "OCamlLabs.ocaml-platform"]
+        with patch.object(personnel.subprocess, "check_output", return_value="\n".join(installed)), patch.object(personnel.subprocess, "run") as run:
+            personnel.install_extensions()
+        marketplace = [call.args[0][-1] for call in run.call_args_list[:-1]]
+        self.assertEqual(marketplace, [extension for extension in extensions if extension.lower() not in {value.lower() for value in installed}])
+        self.assertNotIn("qfortier.vscode-mpi-exercices", marketplace)
+        teacher = run.call_args_list[-1]
+        self.assertEqual(teacher.args[0], ["sh", str(ROOT / ".devcontainer/install-extension.sh")])
+        self.assertTrue(teacher.kwargs["env"]["MPI_TP_EXTENSION_URL"].endswith("/vscode-mpi-exercices.vsix"))
+        self.assertTrue(teacher.kwargs["env"]["MPI_TP_EXTENSION_CACHE"].endswith("/mpi-exercices-extension"))
+
     def test_workspace_is_opened_once_after_reconnections(self):
         with TemporaryDirectory() as directory, patch.object(personnel.subprocess, "run") as run:
             marker = Path(directory) / "opened"

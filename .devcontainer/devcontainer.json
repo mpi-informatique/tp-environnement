@@ -1,6 +1,9 @@
 {
   "name": "MPI",
-  "image": "ghcr.io/mpi-lamartin/environnement:latest",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
   "remoteUser": "vscode",
   "customizations": {
     "vscode": {

@@ -1,4 +1,4 @@
-# Environnement de développement pour les TP de MPI avec Visual Studio Code
+# Environnement de développement MP2I/MPI
 
 Contient :
 - `utop` comme interpréteur interactif OCaml
@@ -6,6 +6,28 @@ Contient :
 - `ocaml` pour exécuter un fichier OCaml (exemple : `ocaml test.ml`)
 - `ocamlopt` pour compiler un fichier OCaml (exemple : `ocamlopt test.ml` puis ./a.out)
 - `sqlite3` pour gérer des bases de données SQLite.
+
+## Socle Nix commun
+
+`flake.nix` définit les outils utilisés aussi par [`lib`](https://github.com/mpi-informatique/lib) et [`exercices`](https://github.com/mpi-informatique/exercices). OCaml 5.5.2 et les autres versions sont verrouillés dans `flake.lock`.
+
+```sh
+nix develop
+utop
+nix flake check
+```
+
+Les dépôts consommateurs importent `github:mpi-informatique/tp-environnement`, suivent son entrée `nixpkgs` et étendent `environnement.lib.mkShell system { packages = [ … ]; }`. Pour adopter une nouvelle version du socle : `nix flake update environnement` dans ces dépôts.
+
+## Bibliothèque OCaml
+
+Le Codespace contient [`mpi-informatique`](https://github.com/mpi-informatique/lib) dans un switch opam personnel, accessible en écriture. Pour la mettre à jour :
+
+```sh
+opam upgrade mpi-informatique
+```
+
+Relancer ensuite `utop` et charger la bibliothèque avec `#require "mpi-informatique";;`. Les mises à jour de l'image demandent une reconstruction du conteneur ; celles de la bibliothèque n'en demandent pas.
 
 Le Makefile est celui donné au TP d'informatique à CCINP et permet de simplifier les commandes.  
 Par exemple, `make main` est un raccourci pour `gcc -o main.exe -Wall *.c -lm` : il compile tous les fichiers C et produit un exécutable `main.exe`.
@@ -32,10 +54,10 @@ Par défaut, GitHub donne 120h/mois d'utilisation gratuite (180h/mois pour les �
 
 ## Image Docker
 
-L'image Docker est [`ghcr.io/mpi-lamartin/environnement:latest`](https://github.com/mpi-lamartin/environnement/pkgs/container/environnement), elle utilise Debian 13 (`trixie-slim`) et un utilisateur `vscode` avec sudo.
+Le Codespace construit l'image à partir de ce dépôt et de `flake.lock` : Debian 13, le même socle Nix et un utilisateur `vscode` avec sudo. La CI teste les outils sur Linux/macOS, puis construit, teste et publie aussi l'image Linux sous `ghcr.io/mpi-informatique/tp-environnement:latest`.
 
 ```sh
-docker build -t mpi-environnement:test .devcontainer
+docker build -f .devcontainer/Dockerfile -t mpi-environnement:test .
 docker run --rm -i mpi-environnement:test sh -s < .devcontainer/smoke-test.sh
 ```
 

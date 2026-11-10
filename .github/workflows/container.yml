@@ -6,10 +6,16 @@ on:
     paths:
       - '.devcontainer/**'
       - '.github/workflows/container.yml'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'tests/smoke.sh'
   pull_request:
     paths:
       - '.devcontainer/**'
       - '.github/workflows/container.yml'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'tests/smoke.sh'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +26,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  tools:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - run: nix flake check
+
   image:
+    needs: tools
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,14 +48,15 @@ jobs:
       - name: Build image for testing
         uses: docker/build-push-action@v6
         with:
-          context: .devcontainer
+          context: .
+          file: .devcontainer/Dockerfile
           load: true
           pull: true
           platforms: linux/amd64
           tags: mpi-environnement:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Test teaching tools without OPAM
+      - name: Test teaching tools and the writable OPAM switch
         run: |
           docker run --rm -i mpi-environnement:test sh -s < .devcontainer/smoke-test.sh
           docker image inspect mpi-environnement:test --format 'Image size: {{.Size}} bytes'

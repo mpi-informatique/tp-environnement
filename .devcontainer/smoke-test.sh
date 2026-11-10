@@ -1,7 +1,8 @@
 #!/bin/sh
 # Run as the normal Codespaces user before publishing an image.
 set -eu
-for tool in gcc gdb make sqlite3 ocaml ocamlc ocamlopt utop ocamlformat ocamlformat-rpc ocamllsp git; do
+. /etc/mpi-environment.sh
+for tool in gcc gdb make sqlite3 ocaml ocamlc ocamlopt utop ocamlformat ocamlformat-rpc ocamllsp git nix opam; do
     command -v "$tool"
 done
 test "$(id -u)" -ne 0
@@ -33,6 +34,10 @@ ocamlc test.ml -o test-bytecode
 ocamlopt test.ml -o test-native
 ./test-native
 printf 'print_endline "utop OK";;\n' | utop -init /dev/null -stdin
+test "$(ocamlc -version)" = "$(opam var ocaml-version)"
+printf '#require "mpi-informatique";;\nassert (Mpi.Automate.nb_etats (Mpi.Automate.creer ~nb_etats:0 ~initiaux:[] ~finaux:[] ~transitions:[]) = 0);;\n' | utop -init /dev/null -stdin
+test -w "$HOME/.opam/default"
+nix --version
 ocamlformat --enable-outside-detected-project --impl test.ml > formatted.ml
 ocamlc formatted.ml -o test-formatted
 ./test-formatted

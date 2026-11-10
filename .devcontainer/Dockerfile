@@ -1,25 +1,9 @@
 # syntax=docker/dockerfile:1
-FROM debian:trixie-slim AS ocaml-tools
+FROM nixos/nix:2.34.7 AS tools
+ENV NIX_CONFIG="experimental-features = nix-command flakes"
+COPY . /src
+RUN nix build /src --out-link /opt/mpi-environnement && nix store gc
 
-# OPAM and compilation dependencies are confined to this build stage.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates curl git build-essential ocaml opam pkg-config libgmp-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN opam init --bare --disable-sandboxing --no-setup -y \
-    && opam switch create /opt/ocaml ocaml-system -y \
-    && opam install --switch=/opt/ocaml -y --jobs=2 \
-        utop.2.16.0 ocamlformat.0.27.0 ocaml-lsp-server.1.23.1 \
-    && opam clean --switch=/opt/ocaml --all-switches --download-cache -y
-
-# Strip only native executables; utop is bytecode and must remain intact.
-RUN strip --strip-debug /opt/ocaml/_opam/bin/ocamllsp \
-        /opt/ocaml/_opam/bin/ocamlformat /opt/ocaml/_opam/bin/ocamlformat-rpc \
-        /opt/ocaml/_opam/bin/dune /opt/ocaml/_opam/bin/ocaml-index
-
-# Generate only the locale requested by Codespaces terminals. Keep the locale
-# sources and generation tools out of the runtime image.
 FROM debian:trixie-slim AS locale-data
 RUN apt-get update \
     && apt-get install -y --no-install-recommends locales \
@@ -27,35 +11,30 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 FROM debian:trixie-slim
-LABEL org.opencontainers.image.source="https://github.com/mpi-lamartin/environnement"
-
-# libc6-dev is needed for C headers; gcc also brings the sanitizer runtimes.
-# Git, SSH, curl and procps support the editor and normal Codespaces usage.
+LABEL org.opencontainers.image.source="https://github.com/mpi-informatique/tp-environnement"
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates curl git openssh-client procps sudo \
-        gcc libc6-dev gdb make sqlite3 ocaml libgmp10 \
-    && apt-get clean \
+    && apt-get install -y --no-install-recommends ca-certificates curl git openssh-client procps sudo \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 1000 --shell /bin/bash vscode \
     && printf 'vscode ALL=(ALL) NOPASSWD:ALL\n' > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode
 
+COPY --from=tools --chown=vscode:vscode /nix /nix
+COPY --from=tools /opt/mpi-environnement /opt/mpi-environnement
 COPY --from=locale-data /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive
-
-# Preserve the installation prefix for findlib/utop, without OPAM, its
-# repository, source archives, build directories or compiler duplication.
-COPY --from=ocaml-tools /opt/ocaml/_opam/bin/ /opt/ocaml/_opam/bin/
-COPY --from=ocaml-tools /opt/ocaml/_opam/lib/ /opt/ocaml/_opam/lib/
-COPY --from=ocaml-tools /opt/ocaml/_opam/share/ /opt/ocaml/_opam/share/
-ENV PATH="/opt/ocaml/_opam/bin:${PATH}" \
-    OCAMLPATH="/opt/ocaml/_opam/lib" \
-    CAML_LD_LIBRARY_PATH="/opt/ocaml/_opam/lib/stublibs" \
+RUN mkdir -p /etc/nix \
+    && printf '%s\n' 'experimental-features = nix-command flakes' 'build-users-group =' 'sandbox = false' > /etc/nix/nix.conf
+ENV PATH="/home/vscode/.opam/default/bin:/opt/mpi-environnement/bin:/nix/var/nix/profiles/default/bin:${PATH}" \
     LANG=C.UTF-8
 
-COPY terminal-help.sh /etc/mpi-terminal-help.sh
-RUN printf '\n. /etc/mpi-terminal-help.sh\n' >> /home/vscode/.bashrc
+COPY .devcontainer/environment.sh /etc/mpi-environment.sh
+COPY .devcontainer/setup-opam.sh /etc/mpi-setup-opam.sh
+COPY .devcontainer/terminal-help.sh /etc/mpi-terminal-help.sh
+RUN printf '\n. /etc/mpi-environment.sh\n' >> /etc/bash.bashrc \
+    && printf '. /etc/mpi-environment.sh\n' > /etc/profile.d/mpi.sh \
+    && printf '\n. /etc/mpi-terminal-help.sh\n' >> /home/vscode/.bashrc
 
 USER vscode
 WORKDIR /home/vscode
+RUN sh /etc/mpi-setup-opam.sh
 CMD ["/bin/bash"]

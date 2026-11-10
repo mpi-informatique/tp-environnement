@@ -54,7 +54,7 @@ Par défaut, GitHub donne 120h/mois d'utilisation gratuite (180h/mois pour les �
 
 ## Image Docker
 
-Le Codespace construit l'image à partir de ce dépôt et de `flake.lock` : Debian 13, le même socle Nix et un utilisateur `vscode` avec sudo. La CI teste les outils sur Linux/macOS, puis construit, teste et publie aussi l'image Linux sous `ghcr.io/mpi-informatique/tp-environnement:latest`.
+Le Codespace construit l'image à partir de ce dépôt et de `flake.lock` : Debian 13, le même socle Nix et un utilisateur `vscode` avec sudo. La CI vérifie les outils sur Linux/macOS et, en parallèle, construit puis teste l'image Linux avant de la publier sous `ghcr.io/mpi-informatique/tp-environnement:latest`.
 
 ```sh
 docker build -f .devcontainer/Dockerfile -t mpi-environnement:test .

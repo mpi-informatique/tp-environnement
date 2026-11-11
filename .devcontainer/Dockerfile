@@ -37,6 +37,6 @@ RUN printf '\n. /etc/mpi-environment.sh\n' >> /etc/bash.bashrc \
 USER vscode
 WORKDIR /home/vscode
 FROM runtime AS default
-ENV PATH="/home/vscode/.opam/default/bin:${PATH}"
+ENV PATH="/opt/mpi-environnement/bin:/home/vscode/.opam/default/bin:${PATH}"
 RUN sh /etc/mpi-setup-opam.sh
 CMD ["/bin/bash"]

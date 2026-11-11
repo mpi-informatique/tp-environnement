@@ -5,6 +5,7 @@ Contient :
 - `gcc` comme compilateur C (exemple : `gcc test.c` puis ./a.out)
 - `ocaml` pour exécuter un fichier OCaml (exemple : `ocaml test.ml`)
 - `ocamlopt` pour compiler un fichier OCaml (exemple : `ocamlopt test.ml` puis ./a.out)
+- `ocamllsp` et `ocamlformat` pour OCaml Platform, et `ocamlearlybird` pour son débogueur
 - `sqlite3` pour gérer des bases de données SQLite.
 
 ## Socle Nix commun
@@ -19,6 +20,22 @@ nix flake check
 
 Les dépôts consommateurs importent `github:mpi-informatique/tp-environnement`, suivent son entrée `nixpkgs` et étendent `environnement.lib.mkShell system { packages = [ … ]; }`. Pour adopter une nouvelle version du socle : `nix flake update environnement` dans ces dépôts.
 
+## Débogage OCaml dans VS Code
+
+Les deux configurations de conteneur installent [OCaml Platform](https://github.com/ocamllabs/vscode-ocaml-platform). Le sandbox `global` utilise les outils du socle Nix, dont Earlybird, compilé avec le même OCaml. En local, installer aussi cette extension et ouvrir VS Code depuis `nix develop` pour lui transmettre l'environnement.
+
+Le socle corrige le parseur des en-têtes de `dap` 1.0.6 pour éviter un blocage à l'initialisation. `nix flake check` vérifie le dialogue DAP, l'arrêt sur un point d'arrêt et la ligne source de la pile d'appels.
+
+Compiler le programme en bytecode avec les informations de débogage :
+
+```sh
+ocamlc -g -o main.bc main.ml
+```
+
+Dans **Exécuter et déboguer**, choisir **OCaml : déboguer un bytecode**, lancer avec F5 puis sélectionner `main.bc`. La configuration s'arrête à l'entrée ; les points d'arrêt et le pas à pas sont disponibles. Le débogueur OCaml Platform est expérimental et travaille sur le bytecode.
+
+Avec Dune, déclarer `(modes byte)` dans l'exécutable, utiliser un langage Dune 3.7 ou supérieur et ajouter `(map_workspace_root false)` au `dune-project` pour permettre la résolution des sources. Construire avec `dune build main.bc`, puis sélectionner `_build/default/main.bc`.
+
 ## Bibliothèque OCaml
 
 Le Codespace contient [`mpi-informatique`](https://github.com/mpi-informatique/lib) dans un switch opam personnel, accessible en écriture. Pour la mettre à jour :
@@ -29,15 +46,9 @@ opam upgrade mpi-informatique
 
 Relancer ensuite `utop` et charger la bibliothèque avec `#require "mpi-informatique";;`. Les mises à jour de l'image demandent une reconstruction du conteneur ; celles de la bibliothèque n'en demandent pas.
 
-## Codespace personnel
+## Environnement enseignant
 
-À la création d'un Codespace de ce dépôt, choisir la configuration **MPI personnel** (`.devcontainer/personnel/devcontainer.json`). GitHub demande les droits d'écriture sur `exercices`, `exercices-prive`, `lib` et `cours`.
-
-Les cinq dépôts sont ouverts dans [personnel.code-workspace](personnel.code-workspace). Le profil ajoute Typst, Python, Just, Node.js 22, GitHub CLI, MDX et odoc ; il prépare les dépendances des deux sites et les liens vers le clone public pour Tinymist. Les ports 3000 et 4321 sont prévus pour les sites de cours et d'exercices ; le lecteur des cours pointe vers le site d'exercices du Codespace.
-
-La préparation peut être relancée avec `python3 .devcontainer/personnel/setup.py`. Les clones existants et leurs branches sont conservés. En local, le même outillage est disponible avec `nix develop .#personnel`.
-
-À chaque connexion, les extensions manquantes (Tinymist, OCaml Platform, C/C++, Python…) sont installées et **Exercices MPI**, l’extension enseignant, est récupérée depuis la dernière release GitHub. Pour relancer cette installation : `python3 .devcontainer/personnel/setup.py --attach`.
+Le profil complet et le Codespace **MPI enseignant** sont maintenus dans le dépôt privé [`exercices-prive`](https://github.com/mpi-informatique/exercices-prive). Ce dépôt conserve uniquement le socle des TP OCaml/C. Les consommateurs peuvent réutiliser `environnement.lib.mkShell` pour un shell et `environnement.lib.mkEnvironment` pour un environnement activable dans une image.
 
 Le Makefile est celui donné au TP d'informatique à CCINP et permet de simplifier les commandes.  
 Par exemple, `make main` est un raccourci pour `gcc -o main.exe -Wall *.c -lm` : il compile tous les fichiers C et produit un exécutable `main.exe`.

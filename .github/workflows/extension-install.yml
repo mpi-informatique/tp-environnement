@@ -2,9 +2,9 @@ name: Vérifier les installations
 on:
   push:
     branches: [main]
-    paths: ['.devcontainer/install-extension.sh', '.devcontainer/personnel/**', 'personnel.code-workspace', 'tests/**', '.github/workflows/extension-install.yml']
+    paths: ['.devcontainer/install-extension.sh', 'tests/**', '.github/workflows/extension-install.yml']
   pull_request:
-    paths: ['.devcontainer/install-extension.sh', '.devcontainer/personnel/**', 'personnel.code-workspace', 'tests/**', '.github/workflows/extension-install.yml']
+    paths: ['.devcontainer/install-extension.sh', 'tests/**', '.github/workflows/extension-install.yml']
   workflow_dispatch:
 permissions:
   contents: read

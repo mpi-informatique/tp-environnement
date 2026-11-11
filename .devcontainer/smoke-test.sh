@@ -2,7 +2,7 @@
 # Run as the normal Codespaces user before publishing an image.
 set -eu
 . /etc/mpi-environment.sh
-for tool in gcc gdb make sqlite3 ocaml ocamlc ocamlopt utop ocamlformat ocamlformat-rpc ocamllsp git nix opam; do
+for tool in gcc gdb make sqlite3 ocaml ocamlc ocamlopt utop ocamlformat ocamlformat-rpc ocamllsp ocamlearlybird git nix opam; do
     command -v "$tool"
 done
 test "$(id -u)" -ne 0
@@ -45,3 +45,4 @@ ocamlformat --enable-outside-detected-project --impl test.ml > formatted.ml
 ocamlc formatted.ml -o test-formatted
 ./test-formatted
 ocamllsp --version
+ocamlearlybird --help > /dev/null

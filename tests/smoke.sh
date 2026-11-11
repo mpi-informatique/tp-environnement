@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for tool in cc make sqlite3 dot ocaml ocamlc ocamlopt ocamlfind utop ocamlformat ocamllsp opam; do
+for tool in cc make sqlite3 dot ocaml ocamlc ocamlopt ocamlfind utop ocamlformat ocamllsp ocamlearlybird opam; do
     command -v "$tool"
 done
 
@@ -29,4 +29,5 @@ ocamlformat --enable-outside-detected-project --impl test.ml > formatted.ml
 ocamlc formatted.ml -o test-formatted
 ./test-formatted
 ocamllsp --version
+ocamlearlybird --help > /dev/null
 opam --version

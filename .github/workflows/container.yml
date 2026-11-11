@@ -8,14 +8,14 @@ on:
       - '.github/workflows/container.yml'
       - 'flake.nix'
       - 'flake.lock'
-      - 'tests/*.sh'
+      - 'tests/**'
   pull_request:
     paths:
       - '.devcontainer/**'
       - '.github/workflows/container.yml'
       - 'flake.nix'
       - 'flake.lock'
-      - 'tests/*.sh'
+      - 'tests/**'
   workflow_dispatch:
 
 permissions:
@@ -37,9 +37,6 @@ jobs:
       - run: nix flake check
 
   image:
-    strategy:
-      matrix:
-        profile: [default, personnel]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,17 +52,13 @@ jobs:
           load: true
           pull: true
           platforms: linux/amd64
-          build-args: MPI_PROFILE=${{ matrix.profile }}
-          tags: mpi-environnement:${{ matrix.profile }}
-          cache-from: type=gha,scope=mpi-${{ matrix.profile }}
-          cache-to: type=gha,scope=mpi-${{ matrix.profile }},mode=max
+          tags: mpi-environnement:test
+          cache-from: type=gha,scope=mpi-default
+          cache-to: type=gha,scope=mpi-default,mode=max
       - name: Test teaching tools and the writable OPAM switch
         run: |
-          docker run --rm -i mpi-environnement:${{ matrix.profile }} sh -s < .devcontainer/smoke-test.sh
-          if [ '${{ matrix.profile }}' = personnel ]; then
-            docker run --rm -i mpi-environnement:personnel bash -s < tests/personnel-smoke.sh
-          fi
-          docker image inspect mpi-environnement:${{ matrix.profile }} --format 'Image size: {{.Size}} bytes'
+          docker run --rm -i mpi-environnement:test sh -s < .devcontainer/smoke-test.sh
+          docker image inspect mpi-environnement:test --format 'Image size: {{.Size}} bytes'
       - name: Log in to GHCR
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
@@ -77,17 +70,11 @@ jobs:
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          PROFILE: ${{ matrix.profile }}
         run: |
           IMAGE="${IMAGE,,}"
-          if [ "$PROFILE" = default ]; then
-            TAG=latest
-            SHA_TAG="sha-$GITHUB_SHA"
-          else
-            TAG=personnel
-            SHA_TAG="personnel-sha-$GITHUB_SHA"
-          fi
-          docker tag "mpi-environnement:$PROFILE" "$IMAGE:$TAG"
-          docker tag "mpi-environnement:$PROFILE" "$IMAGE:$SHA_TAG"
+          TAG=latest
+          SHA_TAG="sha-$GITHUB_SHA"
+          docker tag "mpi-environnement:test" "$IMAGE:$TAG"
+          docker tag "mpi-environnement:test" "$IMAGE:$SHA_TAG"
           docker push "$IMAGE:$SHA_TAG"
           docker push "$IMAGE:$TAG"

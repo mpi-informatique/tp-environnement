@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "OCaml : déboguer un bytecode",
+      "type": "ocaml.earlybird",
+      "request": "launch",
+      "program": "${command:AskProgram}",
+      "stopOnEntry": true
+    }
+  ]
+}

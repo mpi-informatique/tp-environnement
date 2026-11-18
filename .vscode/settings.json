@@ -1,4 +1,7 @@
 {
+  "ocaml.sandbox": {
+    "kind": "global"
+  },
   "github.copilot.enable": {
     "*": false
   }
